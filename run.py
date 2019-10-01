@@ -150,6 +150,7 @@ def main():
     # If the run was succesful, the output will be the same file as the input with "_st" appended to the end.from
     # So we work some extension manipulation to tweak that out.  Hopefully there are no "."'s ever in the filename
     # aside from the extension...Are there?
+    input = inputs['input']['location']['path']
     suffixes = Path(input).suffixes
     filebase = input.rsplit('.')[0]
     output = filebase + '_st'

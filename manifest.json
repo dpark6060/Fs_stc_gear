@@ -1,6 +1,6 @@
 {
-  "name": "qnl-slicetiming",
-  "label": "QNL: FilterShift",
+  "name": "qnl-slicetiming-nodummy",
+  "label": "QNL: FilterShift nodummy",
   "description": "QNL s custom slice timing correction algorithm designed from signal processing and sampling theory",
   "maintainer": "Flywheel <support@flywheel.io>",
   "author": "QNL, Columbia University",
@@ -14,11 +14,12 @@
     "docker-image": "flywheel/fsl-base:5.0",
     "gear-builder": {
       "category": "analysis",
-      "image": "dbp2123/test_img_nodummy:1.0",
+      "image": "dbp2123/test_img_nodummy:1.0"
+    },
       "flywheel": {
         "suite": "Columbia QNL"
       }
-		}
+
 	},
 
   "inputs": {
