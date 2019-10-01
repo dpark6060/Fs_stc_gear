@@ -5,14 +5,13 @@ FROM flywheel/fsl-base:5.0
 
 RUN python3 -m pip install pathlib
 
-# Make run directy for flywheel spec
 
-#ENV  FLYWHEEL /flywheel/v0
-#RUN  mkdir -p ${FLYWHEEL}
-#COPY run.py ${FLYWHEEL}/run.py
-#COPY manifest.json ${FLYWHEEL}/manifest.json
-#COPY filtershift ${FLYWHEEL}/filtershift
+ENV  FLYWHEEL /flywheel/v0
 
+# Make a fake file in the flywheel/v0 dir to determine if flywheel actually maintains docker input to this area
+# (unline flywheel CLI run local)
+RUN echo "FakeFile">${FLYWHEEL}/FakeFile.txt
+# (Turns out, it does)
 
 # Set entrypoint for docker
 ENTRYPOINT ["python3 /flywheel/v0/run.py"]
