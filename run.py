@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 
-import codecs, json, sys, os
-import subprocess as sp
-import glob, shutil
+import codecs
+import glob
+import json
+import os
 from pathlib import Path
+import shutil
+import subprocess as sp
+import sys
+
+import flywheel
 
 FLYWHEEL = "/flywheel/v0"
 INPUT = os.path.join(FLYWHEEL, 'input')
