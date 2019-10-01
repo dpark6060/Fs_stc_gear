@@ -1,0 +1,138 @@
+{
+  "name": "qnl-slicetiming",
+  "label": "QNL: FilterShift",
+  "description": "QNL s custom slice timing correction algorithm designed from signal processing and sampling theory",
+  "maintainer": "Flywheel <support@flywheel.io>",
+  "author": "QNL, Columbia University",
+  "cite": "Parker, David, Xueqing Liu, and Qolamreza R. Razlighi.  Optimal slice timing correction and its interaction with fMRI parameters and artifacts. , Medical Image Analysis 35 (2017): 434-445.",
+  "url": "http://www.columbia.edu/cu/qnl/?page=research%2Foptimal-recovery-of-bold-signal-from-fmri-data%2F",
+  "source": "https://github.com/QuantitativeNeuroimagingLaboratory/FilterShift_C",
+  "license": "Apache-2.0",
+
+  "version": "5.0",
+  "custom": {
+    "docker-image": "flywheel/fslhgf-base:5.0",
+    "gear-builder": {
+      "category": "analysis",
+      "image": "dbp2123/test_img:1.0",
+      "flywheel": {
+        "suite": "Columbia QNL"
+      }
+		}
+	},
+
+  "inputs": {
+    "input": {
+      "description": "The 4D NIFTI fMRI file to perform slice timing correction on",
+      "base": "file",
+      "type": {
+        "enum": [ "nifti"  ]
+      }
+    },
+    "timing": {
+      "optional": true,
+      "default": "NA.txt",
+      "description": "Slice Timing File.  This text file is the time at which each slice was acquired relative to the first slice. each row represents the time at which that slice was acquired. For example,  0  in the first row means that slice 1 was acquired first, and will be shifted 0 seconds.  0.5  in the second row means that slice 2 was acquired 0.5 seconds after the first slice, and will be shifted 0.5s. If present, all interleave parameters are ignored, and slices are shifted using the slice timing file. If you put both a slice timing and a slice order, the program will yell at you and refuse to run.",
+      "base": "file",
+      "type": {
+        "enum": [ "text"  ]
+      }
+    },
+    "order": {
+      "optional": true,
+      "default": "NA",
+      "description": "Slice Order File.  This file is the order in which each slice was acquired. each row represents the order in which that slice was acquired. For example, 1  in the first row means that slice 1 was acquired first.  20  in the second row means that slice 20 was acquired 2nd. If present, all interlave parameters are ignored, and slices are shifted using the slice order file. we refer to the bottom slice in the image as slice 1, not slice 0",
+      "base": "file",
+      "type": {
+        "enum": [  "text"   ]
+      }
+    }
+
+  },
+
+  "config": {
+    "tr": {
+      "description": "The TR of the input NIFTI file",
+      "default": -1,
+      "type": "number"
+    },
+    "itl": {
+      "description": "The interleave parameter of the fMRI data [default=2, even-odd]",
+      "default": -1,
+      "type": "integer"
+    },
+    "start": {
+      "optional": true,
+      "description": "Set the starting slice - The slice that was acquired first in the sequence. Slices start at 1 (the bottom most slice). [default=1]",
+      "default": -1,
+      "type": "integer"
+    },
+    "dir": {
+      "optional": true,
+      "description": "Set the direction of slice acquisition. 1: ascending slice acquisition:(1,3,5,7,9...), -1: descending slice acquisition: (9,7,5,3,...). [default=1]",
+      "default": 0,
+      "minimum": -1,
+      "maximum": 1,
+      "type": "integer"
+    },
+    "cf": {
+      "optional": true,
+      "description": "The algorithm performs lowpass filtering with STC by default.  This sets the cutoff frequency.  If left blank, no filtering occurs.  To ONLY perform filtering, and not STC, include a cutoff frequency and check the  HPF  or  LPF  tags.",
+      "default": 0.0,
+      "minimum": 0.0,
+      "type": "number"
+    },
+    "refslice": {
+      "optional": true,
+      "description": "Set the Reference slice. This is the slice the data is aligned to. Default is the first slice.  Cannot set refslice AND reftime",
+      "default": -1,
+      "type": "integer"
+    },
+    "reftime": {
+      "optional": true,
+      "description": "Set the Reference time.This is the time within each tr the data is aligned to. Default is 0s. Cannot set refslice AND reftime",
+      "default": -1,
+      "type": "number"
+    },
+    "lpf": {
+      "description": "Only Run the Lowpass Filter, do not Preform slice timing correction",
+      "default": false,
+      "type": "boolean"
+    },
+    "hpf": {
+      "description": "Only Run the Lowpass Filter, do not Preform slice timing correction",
+      "default": false,
+      "type": "boolean"
+    },
+    "hires": {
+      "description": "Saves the data in high temporal resolution (20Hz).  NOTE: This will result in large file sizes and long run times",
+      "default": false,
+      "type": "boolean"
+    },
+
+    "axis": {
+      "description": "Sets the axis along which slices are acquired.  Options are  x ,  y , or  z . Default direction is  z ",
+      "default": "z",
+      "enum": ["x","y","z"],
+      "type": "string"
+
+      }
+    },
+  	"environment": {
+      "PATH":"/usr/lib/fsl/5.0:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "FLYWHEEL":"/flywheel/v0",
+                "FSLBROWSER":"/etc/alternatives/x-www-browser",
+                "FSLDIR":"/usr/share/fsl/5.0",
+                "FSLMULTIFILEQUIT":"TRUE",
+                "FSLOUTPUTTYPE":"NIFTI_GZ",
+                "FSLTCLSH":"/usr/bin/tclsh",
+                "FSLWISH":"/usr/bin/wish",
+                "LD_LIBRARY_PATH":"/usr/lib/fsl/5.0",
+                "POSSUMDIR":"/usr/share/fsl/5.0",
+      		"PATH": "/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/bin/python",
+        "PYTHONPATH": "/usr/bin/python3"
+
+
+    },
+  "command": "python3 /flywheel/v0/run.py"
+}
