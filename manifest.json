@@ -14,7 +14,7 @@
     "docker-image": "flywheel/fsl-base:5.0",
     "gear-builder": {
       "category": "analysis",
-      "image": "dbp2123/test_img:1.0",
+      "image": "dbp2123/test_img_nodummy:1.0",
       "flywheel": {
         "suite": "Columbia QNL"
       }

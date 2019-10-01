@@ -10,7 +10,7 @@ ENV  FLYWHEEL /flywheel/v0
 
 # Make a fake file in the flywheel/v0 dir to determine if flywheel actually maintains docker input to this area
 # (unline flywheel CLI run local)
-RUN echo "FakeFile">${FLYWHEEL}/FakeFile.txt
+# RUN echo "FakeFile">${FLYWHEEL}/FakeFile.txt
 # (Turns out, it does)
 
 # Set entrypoint for docker
