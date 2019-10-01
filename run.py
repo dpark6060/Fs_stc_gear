@@ -12,28 +12,28 @@ OUTPUT = os.path.join(FLYWHEEL, 'output')
 
 # We'll use this to check if an optional input is present or not
 # It turned out not being super useful, but whatever
-def Check_key(dict, key):
+def check_key(dict, key):
     if key in dict.keys():
         return True
     return False
 
 
 # Define a little append to run command thing to make the code look a little neater
-def Append_to_run(call, key, val):
+def append_to_run(call, key, val):
     call += '--{}={} '.format(key, val)
     return (call)
 
 
 # This is the meat of the code, the function that does logic on the inputs.  Some of the logic is taken care of in the
 # filtershift binary itself, but there's still a bit of
-def Filtershift_input_logic(inputs, config):
+def filtershift_input_logic(inputs, config):
     # The start of the run command
     runcmd = '{}/filtershift '.format(FLYWHEEL)
 
     # Now we'll build our call: Let's start with our required arguments. First check to verify the input was given and
     # exists:
 
-    if Check_key(inputs, 'input'):
+    if check_key(inputs, 'input'):
         input = inputs['input']['location']['path']
 
         if not os.path.exists(input):
@@ -41,7 +41,7 @@ def Filtershift_input_logic(inputs, config):
             sys.exit(1)
         else:
             print('File {} exists'.format(input))
-        runcmd = Append_to_run(runcmd, 'in', input)
+        runcmd = append_to_run(runcmd, 'in', input)
     else:
 
         # Currently handling all errors with a sys.exit(1).  Any suggestions for more graceful ways would be welcome
@@ -55,11 +55,11 @@ def Filtershift_input_logic(inputs, config):
         sys.exit(1)
 
     tr = config['tr']
-    runcmd = Append_to_run(runcmd, 'TR', tr)
+    runcmd = append_to_run(runcmd, 'TR', tr)
 
     # Now Check For Cutoff Frequency
     cf = config['cf']
-    runcmd = Append_to_run(runcmd, 'cf', cf)
+    runcmd = append_to_run(runcmd, 'cf', cf)
 
     # Now we check for HPF/LPF options.  Theses are bool, so
     if config['hpf'] & config['lpf']:
@@ -67,54 +67,54 @@ def Filtershift_input_logic(inputs, config):
         sys.exit(1)
 
     elif config['hpf']:
-        runcmd = Append_to_run(runcmd, 'hpf', '')
+        runcmd = append_to_run(runcmd, 'hpf', '')
 
     elif config['lpf']:
-        runcmd = Append_to_run(runcmd, 'lpf', '')
+        runcmd = append_to_run(runcmd, 'lpf', '')
 
     # Strictly speaking, if we have a hpf or lpf, we don't need any more input
     # But for completeness, we will go through.
 
     # Now we build our call: First check to see if we have a slice timing/order file (Most common input types in my opinion)
-    Has_file = False
-    if Check_key(inputs, 'timing') & Check_key(inputs, 'order'):
+    has_file = False
+    if check_key(inputs, 'timing') & check_key(inputs, 'order'):
         print('Only a slice timing file OR a slice order file can be provided.  Please choose one.')
         sys.exit(1)
 
-    elif Check_key(inputs, 'timing'):
+    elif check_key(inputs, 'timing'):
         timing = inputs['timing']['location']['path']
-        runcmd = Append_to_run(runcmd, 'timing', timing)
-        Has_file = True
+        runcmd = append_to_run(runcmd, 'timing', timing)
+        has_file = True
 
-    elif Check_key(inputs, 'order'):
+    elif check_key(inputs, 'order'):
         order = inputs['order']['location']['path']
-        runcmd = Append_to_run(runcmd, 'order', order)
-        Has_file = True
+        runcmd = append_to_run(runcmd, 'order', order)
+        has_file = True
 
     # It's possible to select a reference time or slice if using an order file, but not a slice timing file.
     # However, this exception is handled in the code itself, so we don't check for it here.
 
     if config['reftime'] >= 0:
-        runcmd = Append_to_run(runcmd, 'reftime', config['reftime'])
+        runcmd = append_to_run(runcmd, 'reftime', config['reftime'])
 
     if config['refslice'] > 0:
-        runcmd = Append_to_run(runcmd, 'refslice', config['refslice'])
+        runcmd = append_to_run(runcmd, 'refslice', config['refslice'])
 
     # Now we look at start slice and direction codes
-    if not Has_file:
+    if not has_file:
         if config['start'] > 0:
-            runcmd = Append_to_run(runcmd, 'start', config['start'])
+            runcmd = append_to_run(runcmd, 'start', config['start'])
 
         if config['dir'] != 0:
-            runcmd = Append_to_run(runcmd, 'direction', config['dir'])
+            runcmd = append_to_run(runcmd, 'direction', config['dir'])
 
     # Check for Axis:
     if config['axis'] != 'z':
-        runcmd = Append_to_run(runcmd, 'axis', config['axis'])
+        runcmd = append_to_run(runcmd, 'axis', config['axis'])
 
     # Check for hires:
     if config['hires']:
-        runcmd = Append_to_run(runcmd, 'hires', '')
+        runcmd = append_to_run(runcmd, 'hires', '')
 
     return (runcmd)
 
@@ -128,7 +128,7 @@ def main():
     inputs = invocation['inputs']
     destination = invocation['destination']
 
-    runcmd = Filtershift_input_logic(inputs, config)
+    runcmd = filtershift_input_logic(inputs, config)
 
     # Now we can finally make the call:
     #First load the environment to be passed to sp.Popen:
