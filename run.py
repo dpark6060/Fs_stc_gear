@@ -3,6 +3,7 @@
 import codecs
 import glob
 import json
+import logging
 import os
 from pathlib import Path
 import shutil
@@ -32,22 +33,24 @@ def append_to_run(call, key, val):
 
 # This is the meat of the code, the function that does logic on the inputs.  Some of the logic is taken care of in the
 # filtershift binary itself, but there's still a bit of
-def filtershift_input_logic(inputs, config):
+def filtershift_input_logic(gear_context):
+    config = gear_context.config
+
     # The start of the run command
     runcmd = '{}/filtershift '.format(FLYWHEEL)
 
     # Now we'll build our call: Let's start with our required arguments. First check to verify the input was given and
     # exists:
 
-    if check_key(inputs, 'input'):
-        input = inputs['input']['location']['path']
+    if gear_context.get_input('NIFTI'):
+        nifti = gear_context.get_input_path('NIFTI')
 
-        if not os.path.exists(input):
-            print('File not found: {}'.format(input))
+        if not os.path.exists(nifti):
+            print('File not found: {}'.format(nifti))
             sys.exit(1)
         else:
-            print('File {} exists'.format(input))
-        runcmd = append_to_run(runcmd, 'in', input)
+            print('File {} exists'.format(nifti))
+        runcmd = append_to_run(runcmd, 'in', nifti)
     else:
 
         # Currently handling all errors with a sys.exit(1).  Any suggestions for more graceful ways would be welcome
@@ -83,17 +86,17 @@ def filtershift_input_logic(inputs, config):
 
     # Now we build our call: First check to see if we have a slice timing/order file (Most common input types in my opinion)
     has_file = False
-    if check_key(inputs, 'timing') & check_key(inputs, 'order'):
+    if gear_context.get_input('timing') and gear_context.get_input('order'):
         print('Only a slice timing file OR a slice order file can be provided.  Please choose one.')
         sys.exit(1)
 
-    elif check_key(inputs, 'timing'):
-        timing = inputs['timing']['location']['path']
+    elif gear_context.get_input('timing'):
+        timing = gear_context.get_input_path('timing')
         runcmd = append_to_run(runcmd, 'timing', timing)
         has_file = True
 
-    elif check_key(inputs, 'order'):
-        order = inputs['order']['location']['path']
+    elif gear_context.get_input('order'):
+        order = gear_context.get_input_path('order')
         runcmd = append_to_run(runcmd, 'order', order)
         has_file = True
 
@@ -126,49 +129,54 @@ def filtershift_input_logic(inputs, config):
 
 
 def main():
-    # Check for that dummy file made in the docker.  Nothing to do with function of the gear.
-    print(glob.glob('{}/*'.format(FLYWHEEL)))
 
-    invocation = json.loads(open('config.json').read())
-    config = invocation['config']
-    inputs = invocation['inputs']
-    destination = invocation['destination']
+    with flywheel.GearContext() as gear_context:
+        # Initialize logging
+        log = logging.getLogger('[flywheel/fs-stc]')
+        gear_context.init_logging(level='INFO')
+        # Check for that dummy file made in the docker.  Nothing to do with function of the gear.
+        log.info(glob.glob('{}/*'.format(FLYWHEEL)))
 
-    runcmd = filtershift_input_logic(inputs, config)
 
-    # Now we can finally make the call:
-    #First load the environment to be passed to sp.Popen:
-    with open('/tmp/gear_environ.json', 'r') as f:
-        environ = json.load(f)
+        runcmd = filtershift_input_logic(gear_context)
 
-    print(runcmd)
+        # Now we can finally make the call:
+        #First load the environment to be passed to sp.Popen:
+        with open('/tmp/gear_environ.json', 'r') as f:
+            environ = json.load(f)
 
-    # Shamelessly copied from Josh.  Still not 100% on handling stdout and stderr.
-    result = sp.Popen(runcmd, stdout=sp.PIPE, stderr=sp.PIPE,
-                      universal_newlines=True, env=environ, shell=True)
+        log.info(runcmd)
 
-    stdout, stderr = result.communicate()
-    print(stdout)
-    if result.returncode != 0:
-        print(stderr)
-        raise Exception(stderr)
+        # Shamelessly copied from Josh.  Still not 100% on handling stdout and stderr.
+        result = sp.Popen(runcmd, stdout=sp.PIPE, stderr=sp.PIPE,
+                          universal_newlines=True, env=environ, shell=True)
 
-    # If the run was succesful, the output will be the same file as the input with "_st" appended to the end.from
-    # So we work some extension manipulation to tweak that out.  Hopefully there are no "."'s ever in the filename
-    # aside from the extension...Are there?
-    suffixes = Path(input).suffixes
-    filebase = input.rsplit('.')[0]
-    output = filebase + '_st'
-    for i in suffixes:
-        output += i
+        stdout, stderr = result.communicate()
+        log.debug(stdout)
+        if result.returncode != 0:
+            log.info(stderr)
+            raise Exception(stderr)
 
-    # Check for output directory and make it if it's not there
-    flywheel_output = os.path.join(FLYWHEEL, 'output')
-    if not os.path.exists(flywheel_output):
-        os.mkdir(flywheel_output)
+        # If the run was succesful, the output will be the same file as the input with "_st" appended to the end.from
+        # So we work some extension manipulation to tweak that out.  Hopefully there are no "."'s ever in the filename
+        # aside from the extension...Are there?
+        nifti = gear_context.get_input_path('NIFTI')
+        suffixes = Path(nifti).suffixes
+        filebase = nifti.rsplit('.')[0]
+        output_nifti = filebase + '_st'
+        for i in suffixes:
+            output_nifti += i
+        if not os.path.isfile(output_nifti):
+            log.error('Expected output file does not exist: {}'.format(output_nifti))
+            log.error('Exiting...')
+            os.sys.exit(1)
+        # Check for output directory and make it if it's not there
+        flywheel_output = gear_context.output_dir
+        if not os.path.exists(flywheel_output):
+            os.mkdir(flywheel_output)
 
-    # Copy the output file to the appropriate output directory
-    shutil.copy2(output, flywheel_output)
+        # Copy the output file to the appropriate output directory
+        shutil.copy2(output_nifti, flywheel_output)
 
 
 # This could all be smarter, especially with error/exception handling.

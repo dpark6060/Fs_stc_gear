@@ -22,7 +22,7 @@
 	},
 
   "inputs": {
-    "input": {
+    "NIFTI": {
       "description": "The 4D NIFTI fMRI file to perform slice timing correction on",
       "base": "file",
       "type": {

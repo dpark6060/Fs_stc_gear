@@ -10,9 +10,13 @@ ENV  FLYWHEEL /flywheel/v0
 RUN echo "FakeFile">${FLYWHEEL}/FakeFile.txt
 # (Turns out, it does)
 
+
+
+RUN python -c 'import os, json; f = open("/tmp/gear_environ.json", "w"); json.dump(dict(os.environ), f)'
+
 # Helpful to use a requirements file, especially if lots of packages
 COPY requirements.txt ./requirements.txt
-RUN pip install -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 # Set entrypoint for docker
 ENTRYPOINT ["python3 /flywheel/v0/run.py"]
